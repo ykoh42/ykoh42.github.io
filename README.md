@@ -1,73 +1,139 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
+`stateless session`을 찾다가 [iron-session](https://github.com/vvo/iron-session)을 발견했는데, `NestJS`와 함께 사용할 수 있는 녀석이라 사용해보았습니다.
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+'블로그에 글을 작성할 필요가 있을까?' 싶을 정도로 사용이 간단하지만,
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+`NestJS`와 함께 사용하는 예제는 보지 못해서 작성해보았습니다(`express`에서 사용하는 방법과 동일).
 
-## Description
+## What is `iron-session`?
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+_🛠 Node.js stateless session utility using signed and encrypted cookies to store data. Works with Next.js, Express, NestJs, Fastify, and any Node.js HTTP framework._
 
-## Installation
+The session data is stored in encrypted cookies ("seals"). And only your server can decode the session data. There are no session ids, making iron sessions "stateless" from the server point of view.
 
-```bash
-$ npm install
+---
+
+### 1. Nest 프로젝트 만들기 https://github.com/ykoh42/ykoh42.github.io/commit/2e205405ad5541a090efdce764a269b78074bdc8
+
+```sh
+nest new iron-session
 ```
 
-## Running the app
+### 2. iron-session install https://github.com/ykoh42/ykoh42.github.io/commit/a745fd687f140f8d5896ed3f2adcef91924b722e
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```sh
+npm i iron-session
 ```
 
-## Test
+### 3. iron-session 미들웨어 사용하기 https://github.com/ykoh42/ykoh42.github.io/commit/c9a4e0936b0f18ccd737ab8dcf2e04867929c399
 
-```bash
-# unit tests
-$ npm run test
+#### main.ts
 
-# e2e tests
-$ npm run test:e2e
+```ts
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ironSession } from 'iron-session/express';
 
-# test coverage
-$ npm run test:cov
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const session = ironSession({
+    cookieName: 'iron-session/examples/express',
+    password: process.env.SECRET_COOKIE_PASSWORD,
+    cookieOptions: {
+      secure: process.env.NODE_ENV === 'production',
+    },
+  });
+  app.use(session);
+
+  await app.listen(3000);
+}
+bootstrap();
 ```
 
-## Support
+### 4. `req.session` 사용하기 https://github.com/ykoh42/ykoh42.github.io/commit/ec7af3b2dc47eba326bc302d2ac1c525c33822f7
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+컨트롤러에 다음과 같이 3가지 API를 만들도록 하겠습니다.
 
-## Stay in touch
+| Method | URI        | Desc                           |
+| ------ | ---------- | ------------------------------ |
+| `GET`  | `/login`   | 로그인                         |
+| `GET`  | `/profile` | 로그인해야만 볼 수 있는 페이지 |
+| `POST` | `/login`   | 로그아웃                       |
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+#### app.controller.ts
 
-## License
+```ts
+  @Get('login')
+  async logIn(@Req() req) {
+    req.session.user = { id: 20 };
+    await req.session.save();
+    return 'ok';
+  }
 
-Nest is [MIT licensed](LICENSE).
+  @Get('profile')
+  profile(@Req() req) {
+    if (req.session.user === undefined) {
+      return 'user undefined';
+    }
+    return req.session.user;
+  }
+
+  @Post('logout') // use post to prevent cached
+  async logOut(@Req() req) {
+    req.session.destroy();
+    return 'logout ok';
+  }
+```
+
+### 5. `SECRET_COOKIE_PASSWORD` 환경변수 설정하기 https://github.com/ykoh42/ykoh42.github.io/commit/d3665f47241a1ed6f6b837fcc3b76bffef8ec62a
+
+#### package.json
+
+```json
+    "start:dev": "SECRET_COOKIE_PASSWORD=Zp-p!QhpyU_0q!@taxoceA.4q35B7@4q nest start --watch",
+```
+
+### 6. 실행 및 확인
+
+```sh
+npm run start:dev
+```
+
+#### `GET` `/profile` 로 요청을 보내면 다음과 같은 응답이 나타납니다.
+
+```
+user undefined
+```
+
+#### `GET` `/login`으로 요청을 보내서 로그인 한 뒤, 다시 `GET` `profile`로 요청을 보내면 다음과 같은 응답이 나타납니다.
+
+```json
+{
+  "id": 20
+}
+```
+
+로그인 시 다음의 이미지와 같이 `iron-session/examples/express`쿠키가 생성된 것을 확인할 수 있습니다.
+
+<img width="658" alt="Screen Shot 2022-01-01 at 8 06 59 PM" src="https://user-images.githubusercontent.com/16534576/147849212-17371079-8e00-4e27-87a9-6ec36d218580.png">
+
+#### `POST` `/logout`으로 요청을 보낸 뒤, 다시 `GET` `profile`로 요청을 보내면 다음과 같은 응답이 나타납니다.
+
+```
+user undefined
+```
+
+로그아웃 시 `iron-session/examples/express`쿠키가 제거됩니다.
+
+<img width="264" alt="Screen Shot 2022-01-01 at 8 09 00 PM" src="https://user-images.githubusercontent.com/16534576/147849243-196bbbec-d372-4c77-aaef-2adb0c97d236.png">
+
+## 정리
+
+위의 과정을 통해서 `stateless session`인 `iron-session`을 `NestJS`에서 사용하는 방법을 살펴보았고, 전체 코드는 [여기](https://github.com/ykoh42/ykoh42.github.io/tree/%40nestjs/iron-session)에서 확인할 수 있습니다.
+
+실제 production에서 사용하시려면 아래 reference의 문서를 잘 살펴보시길 바랍니다(특히, 보안 관련 사항).
+
+## Reference
+
+- https://github.com/vvo/iron-session
+- https://github.com/vvo/iron-session/tree/main/examples/express
